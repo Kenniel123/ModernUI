@@ -1,74 +1,62 @@
--- ModernUI Library (Executor-ready, Modern Style)
 local ModernUI = {}
 ModernUI.__index = ModernUI
 
--- Services
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local GuiService = Player:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
 
--- Helper function to create instances
 local function new(class, props)
     local inst = Instance.new(class)
-    for k,v in pairs(props or {}) do
-        inst[k] = v
-    end
+    for k,v in pairs(props or {}) do inst[k] = v end
     return inst
 end
 
--- Tween helper
 local function Tween(inst, prop, goal, time)
-    TweenService:Create(inst, TweenInfo.new(time or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {[prop]=goal}):Play()
+    TweenService:Create(inst, TweenInfo.new(time or 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {[prop]=goal}):Play()
 end
 
--- Tab object constructor
-local function CreateTabObject(TabButton, TabContent)
+local function CreateTabObject(TabContent)
     local TabObj = {}
     TabObj.__index = TabObj
 
-    -- Create a Button inside Tab
     function TabObj:CreateButton(text, callback)
         local Btn = new("TextButton", {
             Parent = TabContent,
             Text = text,
-            BackgroundColor3 = Color3.fromRGB(55,55,55),
+            BackgroundColor3 = Color3.fromRGB(45,45,45),
             TextColor3 = Color3.fromRGB(255,255,255),
-            Size = UDim2.new(0,160,0,30),
-            Position = UDim2.new(0,10,#TabContent:GetChildren()*35),
+            Size = UDim2.new(0,180,0,35),
+            Position = UDim2.new(0,15,#TabContent:GetChildren()*45),
             Font = Enum.Font.Gotham,
-            TextSize = 16
+            TextSize = 16,
+            AutoButtonColor = false
         })
-        new("UICorner",{Parent = Btn, CornerRadius = UDim.new(0,6)})
-        Btn.MouseEnter:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(75,75,75)) end)
-        Btn.MouseLeave:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(55,55,55)) end)
+        new("UICorner",{Parent = Btn, CornerRadius=UDim.new(0,8)})
+
+        Btn.MouseEnter:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(65,65,65)) end)
+        Btn.MouseLeave:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(45,45,45)) end)
         Btn.MouseButton1Click:Connect(callback)
     end
 
     return setmetatable(TabObj, TabObj)
 end
 
--- Window constructor
 function ModernUI:CreateWindow(title)
     local selfTable = {}
-
-    -- ScreenGui
     local ScreenGui = new("ScreenGui", {Parent = GuiService, ZIndexBehavior = Enum.ZIndexBehavior.Sibling})
-
-    -- Main Frame
     local MainFrame = new("Frame", {
         Parent = ScreenGui,
         BackgroundColor3 = Color3.fromRGB(25,25,25),
-        Size = UDim2.new(0,450,0,300),
+        Size = UDim2.new(0,480,0,320),
         Position = UDim2.new(0.3,0,0.3,0)
     })
     new("UICorner",{Parent = MainFrame, CornerRadius = UDim.new(0,12)})
 
-    -- Top Bar
     local TopBar = new("Frame", {
         Parent = MainFrame,
-        BackgroundColor3 = Color3.fromRGB(20,20,20),
-        Size = UDim2.new(1,0,0,35)
+        BackgroundColor3 = Color3.fromRGB(30,30,30),
+        Size = UDim2.new(1,0,0,40)
     })
     new("UICorner",{Parent = TopBar, CornerRadius = UDim.new(0,12)})
 
@@ -79,17 +67,16 @@ function ModernUI:CreateWindow(title)
         BackgroundTransparency = 1,
         Size = UDim2.new(0.7,0,1,0),
         Font = Enum.Font.GothamBold,
-        TextSize = 18,
+        TextSize = 20,
         TextXAlignment = Enum.TextXAlignment.Left
     })
 
-    -- Close Button
     local CloseButton = new("TextButton", {
         Parent = TopBar,
         Text = "X",
         TextColor3 = Color3.fromRGB(255,75,75),
         BackgroundTransparency = 1,
-        Size = UDim2.new(0,30,1,0),
+        Size = UDim2.new(0,35,1,0),
         Position = UDim2.new(0.93,0,0,0),
         Font = Enum.Font.GothamBold,
         TextSize = 18
@@ -98,13 +85,12 @@ function ModernUI:CreateWindow(title)
     CloseButton.MouseLeave:Connect(function() Tween(CloseButton,"TextColor3",Color3.fromRGB(255,75,75)) end)
     CloseButton.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
-    -- Minimize Button
     local MinimizeButton = new("TextButton", {
         Parent = TopBar,
         Text = "-",
         TextColor3 = Color3.fromRGB(255,200,0),
         BackgroundTransparency = 1,
-        Size = UDim2.new(0,30,1,0),
+        Size = UDim2.new(0,35,1,0),
         Position = UDim2.new(0.88,0,0,0),
         Font = Enum.Font.GothamBold,
         TextSize = 18
@@ -114,40 +100,37 @@ function ModernUI:CreateWindow(title)
     local minimized = false
     MinimizeButton.MouseButton1Click:Connect(function()
         minimized = not minimized
-        MainFrame.Size = minimized and UDim2.new(0,450,0,35) or UDim2.new(0,450,0,300)
+        ScreenGui.Enabled = not minimized
     end)
 
-    -- Tab List
     local TabContainer = new("ScrollingFrame", {
         Parent = MainFrame,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0,0,0,35),
-        Size = UDim2.new(0.25,0,1,-35),
+        Position = UDim2.new(0,0,0,40),
+        Size = UDim2.new(0.25,0,1,-40),
         ScrollBarThickness = 6
     })
     new("UICorner",{Parent = TabContainer, CornerRadius = UDim.new(0,8)})
 
-    -- Content Container
     local ContentFrame = new("Frame", {
         Parent = MainFrame,
         BackgroundColor3 = Color3.fromRGB(30,30,30),
-        Position = UDim2.new(0.25,5,0,35),
-        Size = UDim2.new(0.75,-5,1,-35)
+        Position = UDim2.new(0.25,5,0,40),
+        Size = UDim2.new(0.75,-5,1,-40)
     })
     new("UICorner",{Parent = ContentFrame, CornerRadius = UDim.new(0,8)})
 
-    -- Create Tab
     function selfTable:CreateTab(name)
         local TabButton = new("TextButton", {
             Parent = TabContainer,
             Text = name,
-            BackgroundColor3 = Color3.fromRGB(40,40,40),
-            Size = UDim2.new(1,0,0,30),
+            BackgroundColor3 = Color3.fromRGB(45,45,45),
+            Size = UDim2.new(1,0,0,35),
             Font = Enum.Font.GothamBold,
             TextSize = 16,
             TextColor3 = Color3.fromRGB(255,255,255)
         })
-        new("UICorner",{Parent = TabButton, CornerRadius = UDim.new(0,6)})
+        new("UICorner",{Parent = TabButton, CornerRadius = UDim.new(0,8)})
 
         local TabContent = new("Frame", {
             Parent = ContentFrame,
@@ -163,7 +146,7 @@ function ModernUI:CreateWindow(title)
             TabContent.Visible = true
         end)
 
-        return CreateTabObject(TabButton, TabContent)
+        return CreateTabObject(TabContent)
     end
 
     return selfTable
