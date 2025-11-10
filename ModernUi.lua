@@ -6,6 +6,7 @@ local Player = Players.LocalPlayer
 local GuiService = Player:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
 
+-- Helpers
 local function new(class, props)
     local inst = Instance.new(class)
     for k,v in pairs(props or {}) do inst[k] = v end
@@ -16,6 +17,57 @@ local function Tween(inst, prop, goal, time)
     TweenService:Create(inst, TweenInfo.new(time or 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {[prop]=goal}):Play()
 end
 
+-- Glass frame
+local function createGlassFrame(parent, size, pos)
+    local frame = new("Frame", {
+        Parent = parent,
+        Size = size,
+        Position = pos,
+        BackgroundColor3 = Color3.fromRGB(11,18,32),
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0
+    })
+    new("UICorner",{Parent=frame, CornerRadius=UDim.new(0,14)})
+    local grad = new("UIGradient", {Parent=frame})
+    grad.Color = ColorSequence.new(Color3.fromRGB(15,23,36), Color3.fromRGB(2,18,27))
+    grad.Rotation = 90
+    return frame
+end
+
+-- Toggle button helper
+local function createToggle(parent, text, callback, default)
+    local frame = new("Frame", {Parent=parent, Size=UDim2.new(1,0,0,35), BackgroundTransparency=1})
+    local label = new("TextLabel", {
+        Parent = frame,
+        Text = text,
+        TextColor3 = Color3.fromRGB(255,255,255),
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0.7,0,1,0),
+        Position = UDim2.new(0,10,0,0),
+        Font = Enum.Font.Gotham,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    local btn = new("TextButton", {
+        Parent = frame,
+        Size = UDim2.new(0,30,0,20),
+        Position = UDim2.new(0.75,0,0.15,0),
+        BackgroundColor3 = default and Color3.fromRGB(124,58,174) or Color3.fromRGB(80,80,80),
+        Text = "",
+        AutoButtonColor = false
+    })
+    new("UICorner",{Parent=btn, CornerRadius=UDim.new(0,6)})
+
+    local state = default
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.BackgroundColor3 = state and Color3.fromRGB(124,58,174) or Color3.fromRGB(80,80,80)
+        callback(state)
+    end)
+    return frame
+end
+
+-- Tab object
 local function CreateTabObject(TabContent)
     local TabObj = {}
     TabObj.__index = TabObj
@@ -32,12 +84,11 @@ local function CreateTabObject(TabContent)
             TextSize = 16,
             AutoButtonColor = false
         })
-        local corner = new("UICorner", {Parent=Btn, CornerRadius=UDim.new(0,10)})
+        new("UICorner",{Parent=Btn, CornerRadius=UDim.new(0,10)})
 
-        local gradient = Instance.new("UIGradient")
+        local gradient = new("UIGradient", {Parent=Btn})
         gradient.Color = ColorSequence.new(Color3.fromRGB(60,60,60), Color3.fromRGB(40,40,40))
         gradient.Rotation = 45
-        gradient.Parent = Btn
 
         Btn.MouseEnter:Connect(function()
             Tween(Btn,"BackgroundColor3",Color3.fromRGB(75,75,75))
@@ -48,18 +99,23 @@ local function CreateTabObject(TabContent)
         Btn.MouseButton1Click:Connect(callback)
     end
 
+    function TabObj:CreateToggle(text, default, callback)
+        return createToggle(TabContent, text, callback, default)
+    end
+
     return setmetatable(TabObj, TabObj)
 end
 
+-- Create main window
 function ModernUI:CreateWindow(title)
     local selfTable = {}
     local ScreenGui = new("ScreenGui",{Parent=GuiService,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
-    
+
     local MainFrame = new("Frame",{
         Parent=ScreenGui,
         BackgroundColor3=Color3.fromRGB(28,28,28),
-        Size=UDim2.new(0,500,0,350),
-        Position=UDim2.new(0.25,0,0.25,0)
+        Size=UDim2.new(0,350,0,400),
+        Position=UDim2.new(0.5,-175,0.5,-200)
     })
     new("UICorner",{Parent=MainFrame,CornerRadius=UDim.new(0,14)})
 
@@ -72,12 +128,12 @@ function ModernUI:CreateWindow(title)
 
     local TitleLabel = new("TextLabel",{
         Parent=TopBar,
-        Text=title or "Executor UI",
+        Text=title or "Modern UI",
         TextColor3=Color3.fromRGB(255,255,255),
         BackgroundTransparency=1,
         Size=UDim2.new(0.7,0,1,0),
         Font=Enum.Font.GothamBold,
-        TextSize=20,
+        TextSize=18,
         TextXAlignment=Enum.TextXAlignment.Left
     })
 
@@ -91,8 +147,6 @@ function ModernUI:CreateWindow(title)
         Font=Enum.Font.GothamBold,
         TextSize=18
     })
-    CloseButton.MouseEnter:Connect(function() Tween(CloseButton,"TextColor3",Color3.fromRGB(255,0,0)) end)
-    CloseButton.MouseLeave:Connect(function() Tween(CloseButton,"TextColor3",Color3.fromRGB(255,75,75)) end)
     CloseButton.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
     local MinimizeButton = new("TextButton",{
@@ -105,12 +159,10 @@ function ModernUI:CreateWindow(title)
         Font=Enum.Font.GothamBold,
         TextSize=18
     })
-    MinimizeButton.MouseEnter:Connect(function() Tween(MinimizeButton,"TextColor3",Color3.fromRGB(255,255,0)) end)
-    MinimizeButton.MouseLeave:Connect(function() Tween(MinimizeButton,"TextColor3",Color3.fromRGB(255,200,0)) end)
     local minimized = false
     MinimizeButton.MouseButton1Click:Connect(function()
         minimized = not minimized
-        MainFrame.Size = minimized and UDim2.new(0,500,0,40) or UDim2.new(0,500,0,350)
+        MainFrame.Size = minimized and UDim2.new(0,350,0,40) or UDim2.new(0,350,0,400)
     end)
 
     local TabContainer = new("ScrollingFrame",{
