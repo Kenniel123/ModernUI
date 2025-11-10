@@ -2,9 +2,9 @@ local ModernUI = {}
 ModernUI.__index = ModernUI
 
 local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local GuiService = Player:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local GuiService = player:WaitForChild("PlayerGui")
 
 -- Helpers
 local function new(class, props)
@@ -13,57 +13,66 @@ local function new(class, props)
     return inst
 end
 
-local function Tween(inst, props, duration, style, direction)
-    TweenService:Create(inst, TweenInfo.new(duration or 0.25, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out), props):Play()
+local function Tween(inst, props, duration)
+    TweenService:Create(inst, TweenInfo.new(duration or 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
 end
 
--- Glass frame
-local function createGlassFrame(parent, size, pos)
-    local frame = new("Frame", {
-        Parent = parent,
-        Size = size,
-        Position = pos,
-        BackgroundColor3 = Color3.fromRGB(11,18,32),
-        BackgroundTransparency = 0.1,
-        BorderSizePixel = 0
-    })
-    new("UICorner", {Parent=frame, CornerRadius=UDim.new(0,14)})
-    local grad = new("UIGradient", {Parent=frame})
-    grad.Color = ColorSequence.new(Color3.fromRGB(15,23,36), Color3.fromRGB(2,18,27))
-    grad.Rotation = 90
-    return frame
+-- Draggable
+local function makeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 end
 
 -- Toggle button
-local function createToggle(parent, text, callback, default)
+local function createToggle(parent, text, default, callback)
     local frame = new("Frame", {Parent=parent, Size=UDim2.new(1,0,0,35), BackgroundTransparency=1})
     local label = new("TextLabel", {
-        Parent = frame,
-        Text = text,
-        TextColor3 = Color3.fromRGB(255,255,255),
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0.7,0,1,0),
-        Position = UDim2.new(0,10,0,0),
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left
+        Parent=frame,
+        Text=text,
+        TextColor3=Color3.fromRGB(245,245,245),
+        BackgroundTransparency=1,
+        Size=UDim2.new(0.7,0,1,0),
+        Position=UDim2.new(0,10,0,0),
+        Font=Enum.Font.Gotham,
+        TextSize=14,
+        TextXAlignment=Enum.TextXAlignment.Left
     })
-
     local btn = new("TextButton", {
-        Parent = frame,
-        Size = UDim2.new(0,30,0,20),
-        Position = UDim2.new(0.75,0,0.15,0),
+        Parent=frame,
+        Size=UDim2.new(0,30,0,20),
+        Position=UDim2.new(0.75,0,0.15,0),
         BackgroundColor3 = default and Color3.fromRGB(124,58,174) or Color3.fromRGB(80,80,80),
         Text = "",
         AutoButtonColor = false
     })
     new("UICorner",{Parent=btn, CornerRadius=UDim.new(0,6)})
-    new("UIStroke",{Parent=btn, Color=Color3.fromRGB(170,85,255), Thickness=1, Transparency=0.5})
-
+    new("UIStroke",{Parent=btn, Color=Color3.fromRGB(170,85,255), Transparency=0.6, Thickness=1})
     local state = default
     btn.MouseButton1Click:Connect(function()
         state = not state
-        Tween(btn, {BackgroundColor3 = state and Color3.fromRGB(124,58,174) or Color3.fromRGB(80,80,80)}, 0.2)
+        Tween(btn, {BackgroundColor3 = state and Color3.fromRGB(124,58,174) or Color3.fromRGB(80,80,80)},0.2)
         callback(state)
     end)
     return frame
@@ -78,8 +87,8 @@ local function CreateTabObject(TabContent)
         local Btn = new("TextButton", {
             Parent = TabContent,
             Text = text,
-            BackgroundColor3 = Color3.fromRGB(50,50,50),
-            TextColor3 = Color3.fromRGB(255,255,255),
+            BackgroundColor3 = Color3.fromRGB(40,40,44),
+            TextColor3 = Color3.fromRGB(245,245,245),
             Size = UDim2.new(0,200,0,40),
             Position = UDim2.new(0,20,#TabContent:GetChildren()*50),
             Font = Enum.Font.Gotham,
@@ -87,123 +96,95 @@ local function CreateTabObject(TabContent)
             AutoButtonColor = false
         })
         new("UICorner",{Parent=Btn, CornerRadius=UDim.new(0,10)})
-        new("UIGradient",{Parent=Btn, Color=ColorSequence.new(Color3.fromRGB(60,60,60), Color3.fromRGB(40,40,40)), Rotation=45})
-
-        Btn.MouseEnter:Connect(function() Tween(Btn, {BackgroundColor3 = Color3.fromRGB(75,75,75)},0.2) end)
-        Btn.MouseLeave:Connect(function() Tween(Btn, {BackgroundColor3 = Color3.fromRGB(50,50,50)},0.2) end)
+        new("UIStroke",{Parent=Btn, Color=Color3.fromRGB(124,58,174), Transparency=0.5, Thickness=1})
+        Btn.MouseEnter:Connect(function() Tween(Btn, {BackgroundColor3 = Color3.fromRGB(60,60,65)},0.2) end)
+        Btn.MouseLeave:Connect(function() Tween(Btn, {BackgroundColor3 = Color3.fromRGB(40,40,44)},0.2) end)
         Btn.MouseButton1Click:Connect(callback)
     end
 
     function TabObj:CreateToggle(text, default, callback)
-        return createToggle(TabContent, text, callback, default)
+        return createToggle(TabContent, text, default, callback)
     end
 
     return setmetatable(TabObj, TabObj)
 end
 
--- Create main window
+-- Main window
 function ModernUI:CreateWindow(title)
     local selfTable = {}
-    local ScreenGui = new("ScreenGui",{Parent=GuiService,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
+    local gui = new("ScreenGui",{Parent=GuiService,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
 
-    local MainFrame = new("Frame",{
-        Parent=ScreenGui,
-        BackgroundColor3=Color3.fromRGB(28,28,28),
+    local root = new("Frame",{
+        Parent=gui,
         Size=UDim2.fromOffset(300,350),
-        Position=UDim2.new(0.5,-150,0.5,-175)
+        Position=UDim2.new(0.5,-150,0.5,-175),
+        BackgroundColor3=Color3.fromRGB(18,18,20)
     })
-    new("UICorner",{Parent=MainFrame,CornerRadius=UDim.new(0,14)})
+    new("UICorner",{Parent=root, CornerRadius=UDim.new(0,14)})
+    new("UIStroke",{Parent=root, Color=Color3.fromRGB(124,58,174), Thickness=1, Transparency=0.7})
+    makeDraggable(root)
 
-    local TopBar = new("Frame",{
-        Parent=MainFrame,
-        BackgroundColor3=Color3.fromRGB(35,35,35),
-        Size=UDim2.new(1,0,0,40)
-    })
-    new("UICorner",{Parent=TopBar,CornerRadius=UDim.new(0,14)})
-
-    local TitleLabel = new("TextLabel",{
-        Parent=TopBar,
+    -- Header
+    local header = new("Frame", {Parent=root, Size=UDim2.new(1,0,0,50), BackgroundTransparency=1})
+    local titleLabel = new("TextLabel", {
+        Parent=header,
         Text=title or "Modern UI",
-        TextColor3=Color3.fromRGB(255,255,255),
+        Size=UDim2.new(1,-50,1,0),
+        Position=UDim2.new(0,10,0,0),
+        TextColor3=Color3.fromRGB(245,245,245),
         BackgroundTransparency=1,
-        Size=UDim2.new(0.7,0,1,0),
         Font=Enum.Font.GothamBold,
         TextSize=18,
         TextXAlignment=Enum.TextXAlignment.Left
     })
-
-    local CloseButton = new("TextButton",{
-        Parent=TopBar,
-        Text="X",
-        TextColor3=Color3.fromRGB(255,75,75),
-        BackgroundTransparency=1,
-        Size=UDim2.new(0,35,1,0),
-        Position=UDim2.new(0.93,0,0,0),
-        Font=Enum.Font.GothamBold,
+    local btnClose = new("TextButton", {
+        Parent=header,
+        Text="✕",
+        Size=UDim2.new(0,36,0,36),
+        Position=UDim2.new(1,-46,0.5,-18),
+        BackgroundColor3=Color3.fromRGB(30,30,34),
+        TextColor3=Color3.fromRGB(220,220,220),
+        Font=Enum.Font.Gotham,
         TextSize=18
     })
-    CloseButton.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+    new("UICorner",{Parent=btnClose, CornerRadius=UDim.new(0,10)})
+    btnClose.MouseButton1Click:Connect(function() gui:Destroy() end)
 
-    local MinimizeButton = new("TextButton",{
-        Parent=TopBar,
-        Text="-",
-        TextColor3=Color3.fromRGB(255,200,0),
+    -- Tab container
+    local tabContainer = new("ScrollingFrame", {
+        Parent=root,
+        Position=UDim2.new(0,0,0,50),
+        Size=UDim2.new(0.25,0,1,-50),
         BackgroundTransparency=1,
-        Size=UDim2.new(0,35,1,0),
-        Position=UDim2.new(0.88,0,0,0),
-        Font=Enum.Font.GothamBold,
-        TextSize=18
-    })
-    local minimized = false
-    MinimizeButton.MouseButton1Click:Connect(function()
-        minimized = not minimized
-        Tween(MainFrame, {Size = minimized and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,350)}, 0.25)
-    end)
-
-    local TabContainer = new("ScrollingFrame",{
-        Parent=MainFrame,
-        BackgroundTransparency=1,
-        Position=UDim2.new(0,0,0,40),
-        Size=UDim2.new(0.25,0,1,-40),
         ScrollBarThickness=6
     })
-    new("UICorner",{Parent=TabContainer,CornerRadius=UDim.new(0,10)})
+    new("UICorner",{Parent=tabContainer, CornerRadius=UDim.new(0,10)})
 
-    local ContentFrame = new("Frame",{
-        Parent=MainFrame,
-        BackgroundColor3=Color3.fromRGB(38,38,38),
-        Position=UDim2.new(0.25,5,0,40),
-        Size=UDim2.new(0.75,-5,1,-40)
+    local contentFrame = new("Frame", {
+        Parent=root,
+        BackgroundColor3=Color3.fromRGB(28,28,30),
+        Position=UDim2.new(0.25,5,0,50),
+        Size=UDim2.new(0.75,-5,1,-50)
     })
-    new("UICorner",{Parent=ContentFrame,CornerRadius=UDim.new(0,10)})
+    new("UICorner",{Parent=contentFrame, CornerRadius=UDim.new(0,10)})
 
     function selfTable:CreateTab(name)
-        local TabButton = new("TextButton",{
-            Parent=TabContainer,
+        local tabButton = new("TextButton", {
+            Parent=tabContainer,
             Text=name,
-            BackgroundColor3=Color3.fromRGB(50,50,50),
             Size=UDim2.new(1,0,0,40),
+            BackgroundColor3=Color3.fromRGB(40,40,44),
             Font=Enum.Font.GothamBold,
             TextSize=16,
-            TextColor3=Color3.fromRGB(255,255,255)
+            TextColor3=Color3.fromRGB(245,245,245)
         })
-        new("UICorner",{Parent=TabButton,CornerRadius=UDim.new(0,10)})
-
-        local TabContent = new("Frame",{
-            Parent=ContentFrame,
-            Size=UDim2.new(1,0,1,0),
-            BackgroundTransparency=1,
-            Visible=false
-        })
-
-        TabButton.MouseButton1Click:Connect(function()
-            for _,v in pairs(ContentFrame:GetChildren()) do
-                if v:IsA("Frame") then v.Visible=false end
-            end
-            TabContent.Visible=true
+        new("UICorner",{Parent=tabButton, CornerRadius=UDim.new(0,10)})
+        local tabContent = new("Frame", {Parent=contentFrame, Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, Visible=false})
+        tabButton.MouseButton1Click:Connect(function()
+            for _,v in pairs(contentFrame:GetChildren()) do if v:IsA("Frame") then v.Visible=false end end
+            tabContent.Visible=true
         end)
-
-        return CreateTabObject(TabContent)
+        return CreateTabObject(tabContent)
     end
 
     return selfTable
