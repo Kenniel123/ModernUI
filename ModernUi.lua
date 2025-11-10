@@ -22,6 +22,32 @@ local function Tween(inst, prop, goal, time)
     TweenService:Create(inst, TweenInfo.new(time or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {[prop]=goal}):Play()
 end
 
+-- Tab object constructor
+local function CreateTabObject(TabButton, TabContent)
+    local TabObj = {}
+    TabObj.__index = TabObj
+
+    -- Create a Button inside Tab
+    function TabObj:CreateButton(text, callback)
+        local Btn = new("TextButton", {
+            Parent = TabContent,
+            Text = text,
+            BackgroundColor3 = Color3.fromRGB(55,55,55),
+            TextColor3 = Color3.fromRGB(255,255,255),
+            Size = UDim2.new(0,160,0,30),
+            Position = UDim2.new(0,10,#TabContent:GetChildren()*35),
+            Font = Enum.Font.Gotham,
+            TextSize = 16
+        })
+        new("UICorner",{Parent = Btn, CornerRadius = UDim.new(0,6)})
+        Btn.MouseEnter:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(75,75,75)) end)
+        Btn.MouseLeave:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(55,55,55)) end)
+        Btn.MouseButton1Click:Connect(callback)
+    end
+
+    return setmetatable(TabObj, TabObj)
+end
+
 -- Window constructor
 function ModernUI:CreateWindow(title)
     local selfTable = {}
@@ -137,25 +163,7 @@ function ModernUI:CreateWindow(title)
             TabContent.Visible = true
         end)
 
-        -- Create a Button inside Tab
-        function TabContent:CreateButton(text, callback)
-            local Btn = new("TextButton", {
-                Parent = TabContent,
-                Text = text,
-                BackgroundColor3 = Color3.fromRGB(55,55,55),
-                TextColor3 = Color3.fromRGB(255,255,255),
-                Size = UDim2.new(0,160,0,30),
-                Position = UDim2.new(0,10,#TabContent:GetChildren()*40),
-                Font = Enum.Font.Gotham,
-                TextSize = 16
-            })
-            new("UICorner",{Parent = Btn, CornerRadius = UDim.new(0,6)})
-            Btn.MouseEnter:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(75,75,75)) end)
-            Btn.MouseLeave:Connect(function() Tween(Btn,"BackgroundColor3",Color3.fromRGB(55,55,55)) end)
-            Btn.MouseButton1Click:Connect(callback)
-        end
-
-        return TabContent
+        return CreateTabObject(TabButton, TabContent)
     end
 
     return selfTable
