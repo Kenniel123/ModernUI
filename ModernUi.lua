@@ -13,8 +13,8 @@ local function new(class, props)
     return inst
 end
 
-local function Tween(inst, prop, goal, time)
-    TweenService:Create(inst, TweenInfo.new(time or 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {[prop]=goal}):Play()
+local function Tween(inst, props, duration, style, direction)
+    TweenService:Create(inst, TweenInfo.new(duration or 0.25, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out), props):Play()
 end
 
 -- Glass frame
@@ -27,14 +27,14 @@ local function createGlassFrame(parent, size, pos)
         BackgroundTransparency = 0.1,
         BorderSizePixel = 0
     })
-    new("UICorner",{Parent=frame, CornerRadius=UDim.new(0,14)})
+    new("UICorner", {Parent=frame, CornerRadius=UDim.new(0,14)})
     local grad = new("UIGradient", {Parent=frame})
     grad.Color = ColorSequence.new(Color3.fromRGB(15,23,36), Color3.fromRGB(2,18,27))
     grad.Rotation = 90
     return frame
 end
 
--- Toggle button helper
+-- Toggle button
 local function createToggle(parent, text, callback, default)
     local frame = new("Frame", {Parent=parent, Size=UDim2.new(1,0,0,35), BackgroundTransparency=1})
     local label = new("TextLabel", {
@@ -48,6 +48,7 @@ local function createToggle(parent, text, callback, default)
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left
     })
+
     local btn = new("TextButton", {
         Parent = frame,
         Size = UDim2.new(0,30,0,20),
@@ -57,11 +58,12 @@ local function createToggle(parent, text, callback, default)
         AutoButtonColor = false
     })
     new("UICorner",{Parent=btn, CornerRadius=UDim.new(0,6)})
+    new("UIStroke",{Parent=btn, Color=Color3.fromRGB(170,85,255), Thickness=1, Transparency=0.5})
 
     local state = default
     btn.MouseButton1Click:Connect(function()
         state = not state
-        btn.BackgroundColor3 = state and Color3.fromRGB(124,58,174) or Color3.fromRGB(80,80,80)
+        Tween(btn, {BackgroundColor3 = state and Color3.fromRGB(124,58,174) or Color3.fromRGB(80,80,80)}, 0.2)
         callback(state)
     end)
     return frame
@@ -85,17 +87,10 @@ local function CreateTabObject(TabContent)
             AutoButtonColor = false
         })
         new("UICorner",{Parent=Btn, CornerRadius=UDim.new(0,10)})
+        new("UIGradient",{Parent=Btn, Color=ColorSequence.new(Color3.fromRGB(60,60,60), Color3.fromRGB(40,40,40)), Rotation=45})
 
-        local gradient = new("UIGradient", {Parent=Btn})
-        gradient.Color = ColorSequence.new(Color3.fromRGB(60,60,60), Color3.fromRGB(40,40,40))
-        gradient.Rotation = 45
-
-        Btn.MouseEnter:Connect(function()
-            Tween(Btn,"BackgroundColor3",Color3.fromRGB(75,75,75))
-        end)
-        Btn.MouseLeave:Connect(function()
-            Tween(Btn,"BackgroundColor3",Color3.fromRGB(50,50,50))
-        end)
+        Btn.MouseEnter:Connect(function() Tween(Btn, {BackgroundColor3 = Color3.fromRGB(75,75,75)},0.2) end)
+        Btn.MouseLeave:Connect(function() Tween(Btn, {BackgroundColor3 = Color3.fromRGB(50,50,50)},0.2) end)
         Btn.MouseButton1Click:Connect(callback)
     end
 
@@ -114,8 +109,8 @@ function ModernUI:CreateWindow(title)
     local MainFrame = new("Frame",{
         Parent=ScreenGui,
         BackgroundColor3=Color3.fromRGB(28,28,28),
-        Size=UDim2.new(0,350,0,400),
-        Position=UDim2.new(0.5,-175,0.5,-200)
+        Size=UDim2.fromOffset(300,350),
+        Position=UDim2.new(0.5,-150,0.5,-175)
     })
     new("UICorner",{Parent=MainFrame,CornerRadius=UDim.new(0,14)})
 
@@ -162,7 +157,7 @@ function ModernUI:CreateWindow(title)
     local minimized = false
     MinimizeButton.MouseButton1Click:Connect(function()
         minimized = not minimized
-        MainFrame.Size = minimized and UDim2.new(0,350,0,40) or UDim2.new(0,350,0,400)
+        Tween(MainFrame, {Size = minimized and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,350)}, 0.25)
     end)
 
     local TabContainer = new("ScrollingFrame",{
