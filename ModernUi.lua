@@ -1,277 +1,302 @@
--- ModernUI 2025 (Ultra Modern UI converted)
+-- ModernUI2025.lua
+-- Ultra Modern 2025 UI rewritten as a UI library module
+
 local ModernUI = {}
 ModernUI.__index = ModernUI
 
+-- Services
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local GuiService = player:WaitForChild("PlayerGui")
-local UserInputService = game:GetService("UserInputService")
 
--- Helpers
-local function new(class, props)
-    local inst = Instance.new(class)
-    for k,v in pairs(props or {}) do inst[k] = v end
-    return inst
+-- Utils
+local function roundify(inst, radius)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, radius or 10)
+	c.Parent = inst
 end
 
-local function createUICorner(inst, radius)
-    local corner = Instance.new("UICorner", inst)
-    corner.CornerRadius = UDim.new(0, radius or 6)
-    return corner
+local function shadow(parent)
+	local s = Instance.new("ImageLabel")
+	s.Name = "Shadow"
+	s.Image = "rbxassetid://1316045217"
+	s.ImageColor3 = Color3.fromRGB(0,0,0)
+	s.ImageTransparency = 0.8
+	s.ScaleType = Enum.ScaleType.Slice
+	s.SliceCenter = Rect.new(10,10,118,118)
+	s.AnchorPoint = Vector2.new(0.5,0.5)
+	s.Position = UDim2.new(0.5,0,0.5,0)
+	s.Size = UDim2.new(1, 24, 1, 24)
+	s.ZIndex = parent.ZIndex - 1
+	s.BackgroundTransparency = 1
+	s.Parent = parent
 end
 
-local function makeDraggable(frame)
-    local dragging, dragInput, dragStart, startPos
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
+-- Create main window
+function ModernUI:CreateWindow(titleText)
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "UltraModernUI"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.Parent = player:WaitForChild("PlayerGui")
+
+	local window = Instance.new("Frame")
+	window.Size = UDim2.new(0, 520, 0, 320)
+	window.Position = UDim2.new(0.5, -260, 0.5, -160)
+	window.BackgroundColor3 = Color3.fromRGB(18,18,22)
+	window.BorderSizePixel = 0
+	window.ClipsDescendants = true
+	window.Parent = gui
+	roundify(window,16)
+	shadow(window)
+
+	-- Header
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 42)
+	header.BackgroundColor3 = Color3.fromRGB(24,24,30)
+	header.BorderSizePixel = 0
+	header.Parent = window
+	roundify(header,16)
+
+	local title = Instance.new("TextLabel")
+	title.Text = titleText or "Ultra Modern UI"
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 16
+	title.TextColor3 = Color3.fromRGB(255,255,255)
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Position = UDim2.new(0, 18, 0, 0)
+	title.Size = UDim2.new(0.6, 0, 1, 0)
+	title.BackgroundTransparency = 1
+	title.Parent = header
+
+	-- Top buttons
+	local function topBtn(txt, pos, callback)
+		local b = Instance.new("TextButton")
+		b.Text = txt
+		b.Font = Enum.Font.GothamBold
+		b.TextSize = 18
+		b.TextColor3 = Color3.fromRGB(230,230,230)
+		b.BackgroundColor3 = Color3.fromRGB(30,30,36)
+		b.Size = UDim2.new(0,32,0,26)
+		b.Position = pos
+		b.AnchorPoint = Vector2.new(1,0)
+		b.AutoButtonColor = true
+		b.BorderSizePixel = 0
+		b.Parent = header
+		roundify(b,8)
+		b.MouseButton1Click:Connect(callback)
+	end
+
+	topBtn("✕", UDim2.new(1, -35, 0.5, -13), function() window.Visible = false end)
+	local minimized = false
+	topBtn("–", UDim2.new(1, -70, 0.5, -15), function()
+		if minimized then
+			window.Size = UDim2.new(0,520,0,320)
+		else
+			window.Size = UDim2.new(0,520,0,42)
+		end
+		minimized = not minimized
+	end)
+
+	-- Sidebar
+	local sidebar = Instance.new("Frame")
+	sidebar.Size = UDim2.new(0,100,1,-42)
+	sidebar.Position = UDim2.new(0,0,0,42)
+	sidebar.BackgroundColor3 = Color3.fromRGB(22,22,28)
+	sidebar.BorderSizePixel = 0
+	sidebar.Parent = window
+	roundify(sidebar,14)
+
+	-- Content
+	local content = Instance.new("Frame")
+	content.Size = UDim2.new(1, -100, 1, -42)
+	content.Position = UDim2.new(0, 100, 0, 42)
+	content.BackgroundColor3 = Color3.fromRGB(26,26,32)
+	content.BorderSizePixel = 0
+	content.Parent = window
+	roundify(content,14)
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(80,140,255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(160,100,255))
+	}
+	gradient.Rotation = 90
+	gradient.Transparency = NumberSequence.new(0.9)
+	gradient.Parent = content
+
+	self.Window = window
+	self.Sidebar = sidebar
+	self.Content = content
+
+	return self
 end
 
--- Section class
-local Section = {}
-Section.__index = Section
-
-function Section:UpdateLayout()
-    local leftY, rightY = 10, 10
-    for _, child in pairs(self.Container:GetChildren()) do
-        if child:IsA("Frame") or child:IsA("TextBox") or child:IsA("TextButton") then
-            local col = child:GetAttribute("Column") or "Left"
-            if col == "Left" then
-                child.Position = UDim2.new(0,10,0,leftY)
-                leftY = leftY + child.Size.Y.Offset + 10
-            else
-                child.Position = UDim2.new(0.5,5,0,rightY)
-                rightY = rightY + child.Size.Y.Offset + 10
-            end
-        end
-    end
-    self.Container.Size = UDim2.new(1,-20,0, math.max(leftY,rightY))
+-- Sidebar tabs
+function ModernUI:CreateTab(name, y)
+	local t = Instance.new("TextButton")
+	t.Text = name
+	t.Font = Enum.Font.Gotham
+	t.TextSize = 14
+	t.TextColor3 = Color3.fromRGB(210,210,210)
+	t.BackgroundColor3 = Color3.fromRGB(32,32,38)
+	t.AutoButtonColor = true
+	t.Size = UDim2.new(1,-20,0,34)
+	t.Position = UDim2.new(0,10,0,y)
+	t.BorderSizePixel = 0
+	t.Parent = self.Sidebar
+	roundify(t,10)
+	return t
 end
 
-function Section:Button(opts)
-    local btn = new("TextButton", {
-        Parent = self.Container,
-        Text = opts.Title or "Button",
-        Size = UDim2.new(0.48,0,0,34),
-        BackgroundColor3 = Color3.fromRGB(70,130,255),
-        Font = Enum.Font.GothamSemibold,
-        TextSize = 14,
-        TextColor3 = Color3.fromRGB(255,255,255),
-    })
-    btn:SetAttribute("Column", opts.Column or "Left")
-    createUICorner(btn,8)
-    if opts.Callback then btn.MouseButton1Click:Connect(opts.Callback) end
-    self:UpdateLayout()
-    return btn
+-- Section creator
+function ModernUI:CreateSection(name, i)
+	local sec = Instance.new("Frame")
+	sec.Size = UDim2.new(0.45,0,0,140)
+	sec.Position = UDim2.new(0, (i%2)*200 + 10, 0, math.floor(i/2)*150 + 10)
+	sec.BackgroundColor3 = Color3.fromRGB(34,34,42)
+	sec.BorderSizePixel = 0
+	sec.Parent = self.Content
+	roundify(sec,12)
+	shadow(sec)
+
+	local title = Instance.new("TextLabel")
+	title.Text = name
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 14
+	title.TextColor3 = Color3.fromRGB(245,245,245)
+	title.BackgroundTransparency = 1
+	title.Position = UDim2.new(0,12,0,8)
+	title.Size = UDim2.new(1,-24,0,20)
+	title.Parent = sec
+	return sec
 end
 
-function Section:Toggle(opts)
-    local frame = new("Frame", {
-        Parent = self.Container,
-        Size = UDim2.new(0.48,0,0,34),
-        BackgroundColor3 = Color3.fromRGB(44,44,52),
-    })
-    frame:SetAttribute("Column", opts.Column or "Left")
-    createUICorner(frame,8)
+-- UI controls
+function ModernUI:CreateDropdown(parent, text, y)
+	local d = Instance.new("Frame")
+	d.Size = UDim2.new(1,-20,0,34)
+	d.Position = UDim2.new(0,10,0,y)
+	d.BackgroundColor3 = Color3.fromRGB(44,44,52)
+	d.BorderSizePixel = 0
+	d.Parent = parent
+	roundify(d,8)
 
-    local label = new("TextLabel", {
-        Parent = frame,
-        Text = opts.Title or "Toggle",
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
-        TextColor3 = Color3.fromRGB(220,220,220),
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0.7,0,1,0),
-        Position = UDim2.new(0,10,0,0)
-    })
-
-    local box = new("Frame", {
-        Parent = frame,
-        Size = UDim2.new(0,22,0,22),
-        Position = UDim2.new(1,-32,0,6),
-        BackgroundColor3 = Color3.fromRGB(90,90,100)
-    })
-    createUICorner(box,11)
-
-    local state = false
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            state = not state
-            box.BackgroundColor3 = state and Color3.fromRGB(70,130,255) or Color3.fromRGB(90,90,100)
-            if opts.Callback then opts.Callback(state) end
-        end
-    end)
-
-    self:UpdateLayout()
-    return frame
+	local label = Instance.new("TextLabel")
+	label.Text = text.." ▼"
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextColor3 = Color3.fromRGB(220,220,220)
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1,-10,1,0)
+	label.Position = UDim2.new(0,10,0,0)
+	label.Parent = d
+	return d
 end
 
-function Section:Slider(opts)
-    local frame = new("Frame", {
-        Parent = self.Container,
-        Size = UDim2.new(0.48,0,0,44),
-        BackgroundColor3 = Color3.fromRGB(44,44,52),
-    })
-    frame:SetAttribute("Column", opts.Column or "Left")
-    createUICorner(frame,8)
+function ModernUI:CreateToggle(parent, text, y)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1,-20,0,34)
+	frame.Position = UDim2.new(0,10,0,y)
+	frame.BackgroundColor3 = Color3.fromRGB(44,44,52)
+	frame.BorderSizePixel = 0
+	frame.Parent = parent
+	roundify(frame,8)
 
-    local label = new("TextLabel", {
-        Parent = frame,
-        Text = opts.Title or "Slider",
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
-        TextColor3 = Color3.fromRGB(220,220,220),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0,10,0,4),
-        Size = UDim2.new(0.4,0,0,18)
-    })
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextColor3 = Color3.fromRGB(220,220,220)
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(0.7,0,1,0)
+	label.Position = UDim2.new(0,10,0,0)
+	label.Parent = frame
 
-    local track = new("Frame", {
-        Parent = frame,
-        Size = UDim2.new(0.8,0,0,8),
-        Position = UDim2.new(0.18,0,0.6,0),
-        BackgroundColor3 = Color3.fromRGB(70,70,80)
-    })
-    createUICorner(track,6)
-
-    local fill = new("Frame", {
-        Parent = track,
-        Size = UDim2.new(opts.Value or 0.4,0,1,0),
-        BackgroundColor3 = Color3.fromRGB(70,130,255)
-    })
-    createUICorner(fill,6)
-
-    local dragging = false
-    track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local relative = math.clamp((input.Position.X - track.AbsolutePosition.X)/track.AbsoluteSize.X, 0,1)
-            fill.Size = UDim2.new(relative,0,1,0)
-            if opts.Callback then opts.Callback(relative) end
-        end
-    end)
-
-    self:UpdateLayout()
-    return frame
+	local switch = Instance.new("Frame")
+	switch.Size = UDim2.new(0,22,0,22)
+	switch.Position = UDim2.new(1,-32,0,6)
+	switch.BackgroundColor3 = Color3.fromRGB(90,90,100)
+	switch.BorderSizePixel = 0
+	switch.Parent = frame
+	roundify(switch,11)
+	return frame
 end
 
-function Section:Textbox(opts)
-    local tb = new("TextBox", {
-        Parent = self.Container,
-        PlaceholderText = opts.Placeholder or "",
-        Size = UDim2.new(0.48,0,0,34),
-        BackgroundColor3 = Color3.fromRGB(44,44,52),
-        TextColor3 = Color3.fromRGB(230,230,230),
-        Font = Enum.Font.Code,
-        TextSize = 14,
-    })
-    tb:SetAttribute("Column", opts.Column or "Left")
-    createUICorner(tb,8)
-    self:UpdateLayout()
-    return tb
+function ModernUI:CreateSlider(parent, text, y)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1,-20,0,44)
+	frame.Position = UDim2.new(0,10,0,y)
+	frame.BackgroundColor3 = Color3.fromRGB(44,44,52)
+	frame.BorderSizePixel = 0
+	frame.Parent = parent
+	roundify(frame,8)
+
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextColor3 = Color3.fromRGB(220,220,220)
+	label.BackgroundTransparency = 1
+	label.Position = UDim2.new(0,10,0,4)
+	label.Size = UDim2.new(0.4,0,0,18)
+	label.Parent = frame
+
+	local track = Instance.new("Frame")
+	track.Size = UDim2.new(0.8,0,0,8)
+	track.Position = UDim2.new(0.18,0,0.6,0)
+	track.BackgroundColor3 = Color3.fromRGB(70,70,80)
+	track.BorderSizePixel = 0
+	track.Parent = frame
+	roundify(track,6)
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(0.4,0,1,0)
+	fill.BackgroundColor3 = Color3.fromRGB(70,130,255)
+	fill.BorderSizePixel = 0
+	fill.Parent = track
+	roundify(fill,6)
+	return frame
 end
 
--- Tab class
-local Tab = {}
-Tab.__index = Tab
+function ModernUI:CreateInput(parent, placeholder, y)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1,-20,0,34)
+	frame.Position = UDim2.new(0,10,0,y)
+	frame.BackgroundColor3 = Color3.fromRGB(44,44,52)
+	frame.BorderSizePixel = 0
+	frame.Parent = parent
+	roundify(frame,8)
 
-function Tab:Section(title)
-    local frame = new("Frame", {
-        Parent = self.Content,
-        Size = UDim2.new(1,0,0,50),
-        BackgroundColor3 = Color3.fromRGB(34,34,42),
-        BorderSizePixel = 0
-    })
-    createUICorner(frame,12)
-
-    local label = new("TextLabel", {
-        Parent = frame,
-        Text = title or "Section",
-        Font = Enum.Font.GothamBold,
-        TextSize = 14,
-        TextColor3 = Color3.fromRGB(245,245,245),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0,12,0,8),
-        Size = UDim2.new(1,-24,0,20)
-    })
-
-    local container = new("Frame", {
-        Parent = frame,
-        Size = UDim2.new(1,-20,0,0),
-        Position = UDim2.new(0,10,0,36),
-        BackgroundColor3 = Color3.fromRGB(44,44,52)
-    })
-    createUICorner(container,12)
-
-    local section = setmetatable({Container=container, Frame=frame}, Section)
-    table.insert(self.Sections, section)
-    return section
+	local tb = Instance.new("TextBox")
+	tb.PlaceholderText = placeholder
+	tb.Size = UDim2.new(1,-14,1,-6)
+	tb.Position = UDim2.new(0,7,0,3)
+	tb.BackgroundTransparency = 1
+	tb.TextColor3 = Color3.fromRGB(230,230,230)
+	tb.Font = Enum.Font.Code
+	tb.TextSize = 14
+	tb.ClearTextOnFocus = false
+	tb.Parent = frame
+	return tb
 end
 
--- ModernUI main
-function ModernUI:CreateWindow(title)
-    local selfTable = {}
-    local gui = new("ScreenGui",{Parent=GuiService, ResetOnSpawn=false, Name="ModernUI"})
-
-    local window = new("Frame",{Parent=gui, Size=UDim2.new(0,520,0,320), Position=UDim2.new(0.5,-260,0.5,-160), BackgroundColor3=Color3.fromRGB(18,18,22)})
-    createUICorner(window,16)
-    makeDraggable(window)
-
-    local header = new("Frame",{Parent=window, Size=UDim2.new(1,0,0,42), BackgroundColor3=Color3.fromRGB(24,24,30)})
-    new("TextLabel",{Parent=header, Text=title or "Modern UI", Font=Enum.Font.GothamBold, TextSize=16, TextColor3=Color3.fromRGB(255,255,255), BackgroundTransparency=1, Position=UDim2.new(0,18,0,0), Size=UDim2.new(0.6,0,1,0)})
-
-    local btnClose = new("TextButton",{Parent=header, Text="✕", Font=Enum.Font.GothamBold, TextSize=18, TextColor3=Color3.fromRGB(230,230,230), BackgroundColor3=Color3.fromRGB(30,30,36), Size=UDim2.new(0,32,0,26), Position=UDim2.new(1,-35,0.5,-13)})
-    createUICorner(btnClose,8)
-    btnClose.MouseButton1Click:Connect(function() gui:Destroy() end)
-
-    local btnMin = new("TextButton",{Parent=header, Text="–", Font=Enum.Font.GothamBold, TextSize=18, TextColor3=Color3.fromRGB(230,230,230), BackgroundColor3=Color3.fromRGB(30,30,36), Size=UDim2.new(0,32,0,26), Position=UDim2.new(1,-70,0.5,-15)})
-    createUICorner(btnMin,8)
-    local minimized = false
-    btnMin.MouseButton1Click:Connect(function()
-        if minimized then window.Size=UDim2.new(0,520,0,320) else window.Size=UDim2.new(0,520,0,42) end
-        minimized = not minimized
-    end)
-
-    local tabs = new("Frame",{Parent=window, Size=UDim2.new(0,100,1,-42), Position=UDim2.new(0,0,0,42), BackgroundColor3=Color3.fromRGB(22,22,28)})
-    local content = new("Frame",{Parent=window, Size=UDim2.new(1,-100,1,-42), Position=UDim2.new(0,100,0,42), BackgroundTransparency=1})
-
-    function selfTable:CreateTab(name)
-        local tabBtn = new("TextButton",{Parent=tabs, Text=name, Size=UDim2.new(1,0,0,34), Font=Enum.Font.Gotham, TextSize=14, TextColor3=Color3.fromRGB(210,210,210), BackgroundColor3=Color3.fromRGB(32,32,38)})
-        createUICorner(tabBtn,10)
-
-        local tabContent = new("Frame",{Parent=content, Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, Visible=false})
-
-        tabBtn.MouseButton1Click:Connect(function()
-            for _,v in pairs(content:GetChildren()) do if v:IsA("Frame") then v.Visible=false end end
-            tabContent.Visible = true
-        end)
-
-        local tabObj = setmetatable({Content=tabContent, Sections={}}, Tab)
-        return tabObj
-    end
-
-    return selfTable
+function ModernUI:CreateButton(parent, text, y, callback)
+	local b = Instance.new("TextButton")
+	b.Text = text
+	b.Font = Enum.Font.GothamSemibold
+	b.TextSize = 14
+	b.TextColor3 = Color3.fromRGB(255,255,255)
+	b.BackgroundColor3 = Color3.fromRGB(70,130,255)
+	b.Size = UDim2.new(1,-20,0,34)
+	b.Position = UDim2.new(0,10,0,y)
+	b.BorderSizePixel = 0
+	b.AutoButtonColor = true
+	b.Parent = parent
+	roundify(b,8)
+	if callback then
+		b.MouseButton1Click:Connect(callback)
+	end
+	return b
 end
 
 return ModernUI
